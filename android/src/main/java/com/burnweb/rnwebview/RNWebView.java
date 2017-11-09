@@ -2,6 +2,7 @@ package com.burnweb.rnwebview;
 
 import android.annotation.SuppressLint;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -31,7 +32,14 @@ class RNWebView extends WebView implements LifecycleEventListener {
 
     protected class EventWebClient extends WebViewClient {
         public boolean shouldOverrideUrlLoading(WebView view, String url){
+
             if(RNWebView.this.getAllowUrlRedirect()) {
+                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:") || url.startsWith("tel:")) {
+
+                    view.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    return true;
+                }
+
                 // do your handling codes here, which url is the requested url
                 // probably you need to open that url rather than redirect:
                 view.loadUrl(url);
