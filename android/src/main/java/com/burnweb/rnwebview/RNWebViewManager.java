@@ -9,6 +9,7 @@ import android.view.ViewGroup.LayoutParams;
 import android.webkit.WebSettings;
 import android.webkit.CookieManager;
 
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 
@@ -32,12 +33,17 @@ public class RNWebViewManager extends SimpleViewManager<RNWebView> {
     public static final int INJECT_JAVASCRIPT = 6;
 
     private static final String HTML_MIME_TYPE = "text/html";
+    private final ReactApplicationContext mContext;
 
     private HashMap<String, String> headerMap = new HashMap<>();
     private RNWebViewPackage aPackage;
 
     @VisibleForTesting
     public static final String REACT_CLASS = "RNWebViewAndroid";
+
+    public RNWebViewManager(ReactApplicationContext reactContext) {
+        mContext = reactContext;
+    }
 
     @Override
     public String getName() {
@@ -46,8 +52,8 @@ public class RNWebViewManager extends SimpleViewManager<RNWebView> {
 
     @Override
     public RNWebView createViewInstance(ThemedReactContext context) {
-        RNWebView rnwv = new RNWebView(this, context);
-
+        RNWebView rnwv = new RNWebView(this, context, mContext);
+        
         // Fixes broken full-screen modals/galleries due to body
         // height being 0.
         rnwv.setLayoutParams(

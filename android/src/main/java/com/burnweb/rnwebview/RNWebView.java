@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
 import android.webkit.ValueCallback;
@@ -14,8 +15,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.common.SystemClock;
 import com.facebook.react.bridge.LifecycleEventListener;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.events.EventDispatcher;
@@ -24,6 +27,7 @@ class RNWebView extends WebView implements LifecycleEventListener {
 
     private final EventDispatcher mEventDispatcher;
     private final RNWebViewManager mViewManager;
+    private final ReactApplicationContext mReactContext;
 
     private String charset = "UTF-8";
     private String baseUrl = "file:///";
@@ -31,11 +35,17 @@ class RNWebView extends WebView implements LifecycleEventListener {
     private boolean allowUrlRedirect = false;
 
     protected class EventWebClient extends WebViewClient {
-        public boolean shouldOverrideUrlLoading(WebView view, String url){
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
 
-            if(RNWebView.this.getAllowUrlRedirect()) {
-                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:") || url.startsWith("tel:")) {
+            if (RNWebView.this.getAllowUrlRedirect()) {
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    if (null != mReactContext) {
+                        mReactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit("EVENT_OPEN_URL", url);
+                        return true;
+                    }
+                }
 
+                if ( url.startsWith("mailto:") || url.startsWith("tel:")) {
                     view.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                     return true;
                 }
@@ -53,7 +63,7 @@ class RNWebView extends WebView implements LifecycleEventListener {
         public void onPageFinished(WebView view, String url) {
             mEventDispatcher.dispatchEvent(new NavigationStateChangeEvent(getId(), SystemClock.nanoTime(), view.getTitle(), false, url, view.canGoBack(), view.canGoForward()));
 
-            if(RNWebView.this.getInjectedJavaScript() != null) {
+            if (RNWebView.this.getInjectedJavaScript() != null) {
                 view.loadUrl("javascript:(function() {\n" + RNWebView.this.getInjectedJavaScript() + ";\n})();");
             }
         }
@@ -90,9 +100,10 @@ class RNWebView extends WebView implements LifecycleEventListener {
         }
     }
 
-    public RNWebView(RNWebViewManager viewManager, ThemedReactContext reactContext) {
+    public RNWebView(RNWebViewManager viewManager, ThemedReactContext reactContext, ReactApplicationContext reactApplicationContext) {
         super(reactContext);
 
+        mReactContext = reactApplicationContext;
         mViewManager = viewManager;
         mEventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
 

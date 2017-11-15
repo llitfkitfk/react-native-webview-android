@@ -32,7 +32,7 @@ public class RNWebViewPackage implements ReactPackage {
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        viewManager = new RNWebViewManager();
+        viewManager = new RNWebViewManager(reactContext);
         viewManager.setPackage(this);
 
         return Arrays.<ViewManager>asList(viewManager);
